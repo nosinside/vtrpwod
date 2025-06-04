@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Generador de contraseñas del día ARRIS basado en una fecha y una semilla opcional.">
+    <title>Generador de Contraseñas del Día</title>
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+        }
+        .container {
+            width: 400px;
+            margin: 50px auto;
+            border: 1px solid #ccc;
+            padding: 20px;
+        }
+        input[type="date"], input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 8px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        button:hover {
+            background-color: #3e8e41;
+        }
+        #passwordResult {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        .footer {
+            margin-top: 20px;
+            font-size: 0.9em;
+            text-align: center;
+            color: #555;
+        }
+        .footer a {
+            color: #337ab7;
+            text-decoration: none;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Generador de Contraseñas del Día Arris</h1>
+        <label for="dateInput">Ingrese la fecha:</label>
+        <input type="date" id="dateInput" min="2000-01-01" max="2099-12-31">
+        <label for="seedInput">Ingrese la semilla (opcional):</label>
+        <input type="text" id="seedInput" placeholder="MPSJKMDHAI (vtr2014 Chile)">
+        <button id="generateButton">Generar Contraseña</button>
+        <div id="passwordResult"></div>
+        <div class="footer">
+            Gracias a <a href="https://github.com/jesusgoku/arrispwod" target="_blank" rel="noopener noreferrer">jesusgoku</a> 👏 por el script original.
+        </div>
+    </div>
+
+    <script>
+        const DEFAULT_SEED = 'MPSJKMDHAI';
+
+        const TABLE1 = [
+            [15, 15, 24, 20, 24],
+            [13, 14, 27, 32, 10],
+            [29, 14, 32, 29, 24],
+            [23, 32, 24, 29, 29],
+            [14, 29, 10, 21, 29],
+            [34, 27, 16, 23, 30],
+            [14, 22, 24, 17, 13]
+        ];
+
+        const TABLE2 = [
+            [0, 1, 2, 9, 3, 4, 5, 6, 7, 8],
+            [1, 4, 3, 9, 0, 7, 8, 2, 5, 6],
+            [7, 2, 8, 9, 4, 1, 6, 0, 3, 5],
+            [6, 3, 5, 9, 1, 8, 2, 7, 4, 0],
+            [4, 7, 0, 9, 5, 2, 3, 1, 8, 6],
+            [5, 6, 1, 9, 8, 0, 4, 3, 2, 7]
+        ];
+
+        const ALPHANUM = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
+        function genPassOfDay(day = new Date(), seed = DEFAULT_SEED) {
+            if (!(day instanceof Date)) throw new TypeError('Date is not a Date instance');
+            if (typeof seed !== 'string') throw new TypeError('Seed is not a String instance');
+            if (seed.length < 1) throw new Error('Seed min length: 1');
+
+            const seedRepeated = seed.repeat(10);
+            const year = day.getFullYear() % 100;
+            const month = day.getMonth() + 1;
+            const dayOfMonth = day.getDate();
+            const dayOfWeek = day.getDay() === 0 ? 6 : day.getDay() - 1;
+
+            const l1 = TABLE1[dayOfWeek].slice(0);
+            l1.push(dayOfMonth);
+            l1.push((year + month - dayOfMonth + 36) % 36);
+            l1.push(((3 + (year + month) % 12) * dayOfMonth % 37) % 36);
+
+            const l2 = [...Array(8).keys()].map((_, i) => seedRepeated.charCodeAt(i) % 36);
+            const l3 = l1.map((f, i) => (f + l2[i]) % 36);
+            const l38 = l3.reduce((t, i) => t + i, 0) % 36;
+            const num8 = l38 % 6;
+            l3.push(l38);
+            l3.push(Math.round(Math.pow(num8, 2)));
+
+            const l4 = TABLE2[num8].map(i => l3[i]);
+            const l5 = l4.map((v, i) => (seedRepeated.charCodeAt(i) + v) % 36);
+
+            return l5.map(i => ALPHANUM[i]).join('');
+        }
+
+        function generatePasswordFromInput() {
+            const dateInput = document.getElementById('dateInput').value;
+            const seedInput = document.getElementById('seedInput').value.trim() || DEFAULT_SEED;
+
+            if (!dateInput) {
+                document.getElementById('passwordResult').innerText = 'Por favor, ingrese una fecha.';
+                return;
+            }
+
+            const [year, month, day] = dateInput.split('-').map(Number);
+            const selectedDate = new Date(year, month - 1, day);
+
+            try {
+                const password = genPassOfDay(selectedDate, seedInput);
+                document.getElementById('passwordResult').innerText = 'Contraseña: ' + password;
+            } catch (error) {
+                document.getElementById('passwordResult').innerText = 'Error: ' + error.message;
+            }
+        }
+
+        document.getElementById('generateButton').addEventListener('click', generatePasswordFromInput);
+
+        // Mostrar automáticamente contraseña del día actual al cargar
+        window.addEventListener('DOMContentLoaded', () => {
+            const today = new Date();
+            document.getElementById('dateInput').valueAsDate = today;
+
+            try {
+                const password = genPassOfDay(today);
+                document.getElementById('passwordResult').innerText = 'Contraseña: ' + password;
+            } catch (e) {
+                document.getElementById('passwordResult').innerText = 'Error al generar la contraseña automática.';
+            }
+        });
+    </script>
+</body>
+</html>
