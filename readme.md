@@ -4,7 +4,7 @@ Este repositorio contiene el código fuente del proyecto **VTRPWOD**. A continua
 
 ## Descripción
 
-El proyecto **VTRPWOD** está diseñado para [describir brevemente el propósito del proyecto]. Este repositorio incluye todos los archivos necesarios para su implementación.
+El proyecto **VTRPWOD** está diseñado para generar claves de router ARRIS del día, se puede cambiar la semilla y generar clave para uso diario. Este repositorio incluye todos los archivos necesarios para su implementación.
 
 ## Estructura del Proyecto
 
